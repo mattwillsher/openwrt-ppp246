@@ -1,0 +1,673 @@
+diff --git a/package/network/services/ppp/Makefile b/package/network/services/ppp/Makefile
+index d4aab38..96c79a7 100644
+--- a/package/network/services/ppp/Makefile
++++ b/package/network/services/ppp/Makefile
+@@ -9,13 +9,12 @@ include $(TOPDIR)/rules.mk
+ include $(INCLUDE_DIR)/kernel.mk
+ 
+ PKG_NAME:=ppp
+-PKG_VERSION:=2.4.5
+-PKG_RELEASE:=10
++PKG_VERSION:=2.4.6
++PKG_RELEASE:=1
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+ PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
+-PKG_MD5SUM:=4621bc56167b6953ec4071043fe0ec57
+-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
++PKG_MD5SUM:=3434d2cc9327167a0723aaaa8670083b
+ 
+ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+ 
+@@ -158,7 +157,7 @@ $(call Build/Configure/Default,, \
+ 	mkdir -p $(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux
+ 	cp \
+ 		$(LINUX_DIR)/include/linux/compiler.h \
+-		$(LINUX_DIR)/include/$(LINUX_UAPI_DIR)linux/atm*.h \
++		$(LINUX_DIR)/include/linux/atm*.h \
+ 		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
+ endef
+ 
+diff --git a/package/network/services/ppp/patches/100-debian_ip-ip_option.patch b/package/network/services/ppp/patches/100-debian_ip-ip_option.patch
+index ca43cb2..5712367 100644
+--- a/package/network/services/ppp/patches/100-debian_ip-ip_option.patch
++++ b/package/network/services/ppp/patches/100-debian_ip-ip_option.patch
+@@ -12,7 +12,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/ipcp.c
+ +++ b/pppd/ipcp.c
+-@@ -1939,7 +1939,7 @@ ipcp_up(f)
++@@ -1958,7 +1958,7 @@ ipcp_up(f)
+       */
+      if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
+  	ipcp_script_state = s_up;
+@@ -21,7 +21,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+  }
+  
+-@@ -1989,7 +1989,7 @@ ipcp_down(f)
++@@ -2008,7 +2008,7 @@ ipcp_down(f)
+      /* Execute the ip-down script */
+      if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
+  	ipcp_script_state = s_down;
+@@ -30,7 +30,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+  }
+  
+-@@ -2043,13 +2043,13 @@ ipcp_script_done(arg)
++@@ -2062,13 +2062,13 @@ ipcp_script_done(arg)
+      case s_up:
+  	if (ipcp_fsm[0].state != OPENED) {
+  	    ipcp_script_state = s_down;
+@@ -60,7 +60,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+ --- a/pppd/options.c
+ +++ b/pppd/options.c
+-@@ -113,6 +113,8 @@ char	linkname[MAXPATHLEN];	/* logical na
++@@ -114,6 +114,8 @@ char	linkname[MAXPATHLEN];	/* logical na
+  bool	tune_kernel;		/* may alter kernel settings */
+  int	connect_delay = 1000;	/* wait this many ms after connect script */
+  int	req_unit = -1;		/* requested interface unit */
+@@ -69,9 +69,9 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  bool	multilink = 0;		/* Enable multilink operation */
+  char	*bundle_name = NULL;	/* bundle name for multilink */
+  bool	dump_options;		/* print out option values */
+-@@ -281,6 +283,13 @@ option_t general_options[] = {
+-       "Number of seconds to wait for child processes at exit",
+-       OPT_PRIO },
++@@ -299,6 +301,13 @@ option_t general_options[] = {
++       "Unset user environment variable",
++       OPT_A2PRINTER | OPT_NOPRINT, (void *)user_unsetprint },
+  
+ +    { "ip-up-script", o_string, path_ipup,
+ +      "Set pathname of ip-up script",
+@@ -85,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+        "Enable multilink operation", OPT_PRIO | 1 },
+ --- a/pppd/pppd.h
+ +++ b/pppd/pppd.h
+-@@ -313,6 +313,8 @@ extern bool	tune_kernel;	/* May alter ke
++@@ -317,6 +317,8 @@ extern bool	tune_kernel;	/* May alter ke
+  extern int	connect_delay;	/* Time to delay after connect script */
+  extern int	max_data_rate;	/* max bytes/sec through charshunt */
+  extern int	req_unit;	/* interface unit number to use */
+diff --git a/package/network/services/ppp/patches/105-debian_demand.patch b/package/network/services/ppp/patches/105-debian_demand.patch
+index c278656..b26a8c3 100644
+--- a/package/network/services/ppp/patches/105-debian_demand.patch
++++ b/package/network/services/ppp/patches/105-debian_demand.patch
+@@ -139,7 +139,7 @@
+  	} else {
+ --- a/pppd/ipcp.c
+ +++ b/pppd/ipcp.c
+-@@ -1864,7 +1864,7 @@ ipcp_up(f)
++@@ -1883,7 +1883,7 @@ ipcp_up(f)
+  		    proxy_arp_set[f->unit] = 1;
+  
+  	}
+@@ -150,7 +150,7 @@
+      } else {
+ --- a/pppd/ipv6cp.c
+ +++ b/pppd/ipv6cp.c
+-@@ -1232,7 +1232,7 @@ ipv6cp_up(f)
++@@ -1243,7 +1243,7 @@ ipv6cp_up(f)
+  	    }
+  
+  	}
+@@ -161,7 +161,7 @@
+      } else {
+ --- a/pppd/pppd.h
+ +++ b/pppd/pppd.h
+-@@ -566,7 +566,7 @@ void demand_conf __P((void));	/* config 
++@@ -584,7 +584,7 @@ void demand_conf __P((void));	/* config
+  void demand_block __P((void));	/* set all NPs to queue up packets */
+  void demand_unblock __P((void)); /* set all NPs to pass packets */
+  void demand_discard __P((void)); /* set all NPs to discard packets */
+diff --git a/package/network/services/ppp/patches/110-debian_defaultroute.patch b/package/network/services/ppp/patches/110-debian_defaultroute.patch
+index 41d2890..41404ab 100644
+--- a/package/network/services/ppp/patches/110-debian_defaultroute.patch
++++ b/package/network/services/ppp/patches/110-debian_defaultroute.patch
+@@ -36,7 +36,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  static void ipcp_script __P((char *, int));	/* Run an up/down script */
+  static void ipcp_script_done __P((void *));
+  
+-@@ -1742,7 +1750,8 @@ ip_demand_conf(u)
++@@ -1761,7 +1769,8 @@ ip_demand_conf(u)
+      if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
+  	return 0;
+      if (wo->default_route)
+@@ -46,7 +46,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  	    default_route_set[u] = 1;
+      if (wo->proxy_arp)
+  	if (sifproxyarp(u, wo->hisaddr))
+-@@ -1830,7 +1839,8 @@ ipcp_up(f)
++@@ -1849,7 +1858,8 @@ ipcp_up(f)
+       */
+      if (demand) {
+  	if (go->ouraddr != wo->ouraddr || ho->hisaddr != wo->hisaddr) {
+@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  	    if (go->ouraddr != wo->ouraddr) {
+  		warn("Local IP address changed to %I", go->ouraddr);
+  		script_setenv("OLDIPLOCAL", ip_ntoa(wo->ouraddr), 0);
+-@@ -1855,7 +1865,8 @@ ipcp_up(f)
++@@ -1874,7 +1884,8 @@ ipcp_up(f)
+  
+  	    /* assign a default route through the interface if required */
+  	    if (ipcp_wantoptions[f->unit].default_route) 
+@@ -66,7 +66,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  		    default_route_set[f->unit] = 1;
+  
+  	    /* Make a proxy ARP entry if requested. */
+-@@ -1905,7 +1916,8 @@ ipcp_up(f)
++@@ -1924,7 +1935,8 @@ ipcp_up(f)
+  
+  	/* assign a default route through the interface if required */
+  	if (ipcp_wantoptions[f->unit].default_route) 
+@@ -76,7 +76,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  		default_route_set[f->unit] = 1;
+  
+  	/* Make a proxy ARP entry if requested. */
+-@@ -1983,7 +1995,7 @@ ipcp_down(f)
++@@ -2002,7 +2014,7 @@ ipcp_down(f)
+  	sifnpmode(f->unit, PPP_IP, NPMODE_DROP);
+  	sifdown(f->unit);
+  	ipcp_clear_addrs(f->unit, ipcp_gotoptions[f->unit].ouraddr,
+@@ -85,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+  
+      /* Execute the ip-down script */
+-@@ -1999,16 +2011,25 @@ ipcp_down(f)
++@@ -2018,16 +2030,25 @@ ipcp_down(f)
+   * proxy arp entries, etc.
+   */
+  static void
+@@ -137,7 +137,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  .B disconnect \fIscript
+  Execute the command specified by \fIscript\fR, by passing it to a
+  shell, after
+-@@ -717,7 +722,12 @@ disable both forms of hardware flow cont
++@@ -734,7 +739,12 @@ disable both forms of hardware flow cont
+  .TP
+  .B nodefaultroute
+  Disable the \fIdefaultroute\fR option.  The system administrator who
+@@ -153,7 +153,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  .B nodeflate
+ --- a/pppd/pppd.h
+ +++ b/pppd/pppd.h
+-@@ -645,7 +645,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
++@@ -664,7 +664,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
+  int  cif6addr __P((int, eui64_t, eui64_t));
+  				/* Remove an IPv6 address from i/f */
+  #endif
+diff --git a/package/network/services/ppp/patches/120-debian_ipv6_updown_option.patch b/package/network/services/ppp/patches/120-debian_ipv6_updown_option.patch
+index c5457fa..b59c33e 100644
+--- a/package/network/services/ppp/patches/120-debian_ipv6_updown_option.patch
++++ b/package/network/services/ppp/patches/120-debian_ipv6_updown_option.patch
+@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      new_phase(PHASE_INITIALIZE);
+ --- a/pppd/options.c
+ +++ b/pppd/options.c
+-@@ -115,6 +115,8 @@ int	connect_delay = 1000;	/* wait this m
++@@ -116,6 +116,8 @@ int	connect_delay = 1000;	/* wait this m
+  int	req_unit = -1;		/* requested interface unit */
+  char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
+  char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
+@@ -32,7 +32,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  bool	multilink = 0;		/* Enable multilink operation */
+  char	*bundle_name = NULL;	/* bundle name for multilink */
+  bool	dump_options;		/* print out option values */
+-@@ -290,6 +292,13 @@ option_t general_options[] = {
++@@ -308,6 +310,13 @@ option_t general_options[] = {
+        "Set pathname of ip-down script",
+        OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+  
+@@ -48,7 +48,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+        "Enable multilink operation", OPT_PRIO | 1 },
+ --- a/pppd/ipv6cp.c
+ +++ b/pppd/ipv6cp.c
+-@@ -1288,7 +1288,7 @@ ipv6cp_up(f)
++@@ -1303,7 +1303,7 @@ ipv6cp_up(f)
+       */
+      if (ipv6cp_script_state == s_down && ipv6cp_script_pid == 0) {
+  	ipv6cp_script_state = s_up;
+@@ -57,7 +57,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+  }
+  
+-@@ -1339,7 +1339,7 @@ ipv6cp_down(f)
++@@ -1357,7 +1357,7 @@ ipv6cp_down(f)
+      /* Execute the ipv6-down script */
+      if (ipv6cp_script_state == s_up && ipv6cp_script_pid == 0) {
+  	ipv6cp_script_state = s_down;
+@@ -66,7 +66,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+  }
+  
+-@@ -1382,13 +1382,13 @@ ipv6cp_script_done(arg)
++@@ -1400,13 +1400,13 @@ ipv6cp_script_done(arg)
+      case s_up:
+  	if (ipv6cp_fsm[0].state != OPENED) {
+  	    ipv6cp_script_state = s_down;
+@@ -84,7 +84,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      }
+ --- a/pppd/pppd.h
+ +++ b/pppd/pppd.h
+-@@ -315,6 +315,8 @@ extern int	max_data_rate;	/* max bytes/s
++@@ -319,6 +319,8 @@ extern int	max_data_rate;	/* max bytes/s
+  extern int	req_unit;	/* interface unit number to use */
+  extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
+  extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
+diff --git a/package/network/services/ppp/patches/200-makefile.patch b/package/network/services/ppp/patches/200-makefile.patch
+index 9db908d..9585336 100644
+--- a/package/network/services/ppp/patches/200-makefile.patch
++++ b/package/network/services/ppp/patches/200-makefile.patch
+@@ -16,7 +16,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+  # Uncomment the next line to enable multilink PPP (enabled by default)
+  # Linux distributions: Please leave multilink ENABLED in your builds
+-@@ -58,11 +58,11 @@ HAVE_MULTILINK=y
++@@ -58,9 +58,9 @@ HAVE_MULTILINK=y
+  # Uncomment the next line to enable the TDB database (enabled by default.)
+  # If you enable multilink, then TDB is automatically enabled also.
+  # Linux distributions: Please leave TDB ENABLED in your builds.
+@@ -26,12 +26,9 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ -HAS_SHADOW=y
+ +#HAS_SHADOW=y
+  #USE_PAM=y
+--#HAVE_INET6=y
+-+HAVE_INET6=y
++ HAVE_INET6=y
+  
+- # Enable plugins
+- PLUGIN=y
+-@@ -77,7 +77,7 @@ MAXOCTETS=y
++@@ -80,7 +80,7 @@ MAXOCTETS=y
+  
+  INCLUDE_DIRS= -I../include
+  
+@@ -40,7 +37,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+  CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+  
+-@@ -117,10 +117,10 @@ CFLAGS   += -DHAS_SHADOW
++@@ -120,10 +120,10 @@ CFLAGS   += -DHAS_SHADOW
+  #LIBS     += -lshadow $(LIBS)
+  endif
+  
+@@ -51,5 +48,5 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ -endif
+ +#endif
+  
+- ifdef NEEDDES
+- ifndef USE_CRYPT
++ ifdef USE_LIBUTIL
++ CFLAGS	+= -DHAVE_LOGWTMP=1
+diff --git a/package/network/services/ppp/patches/201-mppe_mppc_1.1.patch b/package/network/services/ppp/patches/201-mppe_mppc_1.1.patch
+index 3edd11e..0bc42d4 100644
+--- a/package/network/services/ppp/patches/201-mppe_mppc_1.1.patch
++++ b/package/network/services/ppp/patches/201-mppe_mppc_1.1.patch
+@@ -1473,7 +1473,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+ --- a/pppd/chap_ms.c
+ +++ b/pppd/chap_ms.c
+-@@ -898,13 +898,17 @@ set_mppe_enc_types(int policy, int types
++@@ -963,13 +963,17 @@ set_mppe_enc_types(int policy, int types
+      /*
+       * Disable undesirable encryption types.  Note that we don't ENABLE
+       * any encryption types, to avoid overriding manual configuration.
+diff --git a/package/network/services/ppp/patches/202-no_strip.patch b/package/network/services/ppp/patches/202-no_strip.patch
+index 87c76ad..375f449 100644
+--- a/package/network/services/ppp/patches/202-no_strip.patch
++++ b/package/network/services/ppp/patches/202-no_strip.patch
+@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  clean:
+ --- a/pppd/Makefile.linux
+ +++ b/pppd/Makefile.linux
+-@@ -99,7 +99,7 @@ ifdef USE_SRP
++@@ -102,7 +102,7 @@ ifdef USE_SRP
+  CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
+  LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
+  TARGETS	+= srp-entry
+@@ -28,7 +28,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  MANPAGES += srp-entry.8
+  EXTRACLEAN += srp-entry.o
+  NEEDDES=y
+-@@ -200,7 +200,7 @@ all: $(TARGETS)
++@@ -208,7 +208,7 @@ all: $(TARGETS)
+  install: pppd
+  	mkdir -p $(BINDIR) $(MANDIR)
+  	$(EXTRAINSTALL)
+diff --git a/package/network/services/ppp/patches/203-opt_flags.patch b/package/network/services/ppp/patches/203-opt_flags.patch
+index a369163..906d081 100644
+--- a/package/network/services/ppp/patches/203-opt_flags.patch
++++ b/package/network/services/ppp/patches/203-opt_flags.patch
+@@ -8,7 +8,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/plugins/radius/Makefile.linux
+ +++ b/pppd/plugins/radius/Makefile.linux
+-@@ -12,7 +12,8 @@ VERSION = $(shell awk -F '"' '/VERSION/ 
++@@ -12,7 +12,8 @@ VERSION = $(shell awk -F '"' '/VERSION/
+  INSTALL	= install
+  
+  PLUGIN=radius.so radattr.so radrealms.so
+diff --git a/package/network/services/ppp/patches/205-no_exponential_timeout.patch b/package/network/services/ppp/patches/205-no_exponential_timeout.patch
+index 7119fb8..68aea12 100644
+--- a/package/network/services/ppp/patches/205-no_exponential_timeout.patch
++++ b/package/network/services/ppp/patches/205-no_exponential_timeout.patch
+@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/plugins/rp-pppoe/discovery.c
+ +++ b/pppd/plugins/rp-pppoe/discovery.c
+-@@ -548,7 +548,9 @@ discovery(PPPoEConnection *conn)
++@@ -644,7 +644,9 @@ discovery(PPPoEConnection *conn)
+  	conn->discoveryState = STATE_SENT_PADI;
+  	waitForPADO(conn, timeout);
+  
+@@ -17,7 +17,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      } while (conn->discoveryState == STATE_SENT_PADI);
+  
+      timeout = conn->discoveryTimeout;
+-@@ -563,7 +565,9 @@ discovery(PPPoEConnection *conn)
++@@ -659,7 +661,9 @@ discovery(PPPoEConnection *conn)
+  	sendPADR(conn);
+  	conn->discoveryState = STATE_SENT_PADR;
+  	waitForPADS(conn, timeout);
+@@ -26,4 +26,4 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ +#endif
+      } while (conn->discoveryState == STATE_SENT_PADR);
+  
+-     /* We're done. */
++     if (!conn->seenMaxPayload) {
+diff --git a/package/network/services/ppp/patches/207-lcp_mtu_max.patch b/package/network/services/ppp/patches/207-lcp_mtu_max.patch
+index 1ebcf41..285865f 100644
+--- a/package/network/services/ppp/patches/207-lcp_mtu_max.patch
++++ b/package/network/services/ppp/patches/207-lcp_mtu_max.patch
+@@ -8,7 +8,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/lcp.c
+ +++ b/pppd/lcp.c
+-@@ -1904,12 +1904,12 @@ lcp_up(f)
++@@ -1914,12 +1914,12 @@ lcp_up(f)
+       * the interface MTU is set to the lowest of that, the
+       * MTU we want to use, and our link MRU.
+       */
+diff --git a/package/network/services/ppp/patches/300-filter-pcap-includes-lib.patch b/package/network/services/ppp/patches/300-filter-pcap-includes-lib.patch
+index d8dcc64..843c9f2 100644
+--- a/package/network/services/ppp/patches/300-filter-pcap-includes-lib.patch
++++ b/package/network/services/ppp/patches/300-filter-pcap-includes-lib.patch
+@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/Makefile.linux
+ +++ b/pppd/Makefile.linux
+-@@ -170,8 +170,8 @@ endif
++@@ -178,8 +178,8 @@ endif
+  
+  ifdef FILTER
+  ifneq ($(wildcard /usr/include/pcap-bpf.h),)
+diff --git a/package/network/services/ppp/patches/310-precompile_filter.patch b/package/network/services/ppp/patches/310-precompile_filter.patch
+index 87b9687..7b62a9f 100644
+--- a/package/network/services/ppp/patches/310-precompile_filter.patch
++++ b/package/network/services/ppp/patches/310-precompile_filter.patch
+@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  # Uncomment the next line to enable multilink PPP (enabled by default)
+  # Linux distributions: Please leave multilink ENABLED in your builds
+  # of pppd!
+-@@ -175,6 +178,14 @@ CFLAGS  += -DPPP_FILTER -I$(STAGING_DIR)
++@@ -183,6 +186,14 @@ CFLAGS  += -DPPP_FILTER -I$(STAGING_DIR)
+  endif
+  endif
+  
+@@ -48,7 +48,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  /*
+   * There have been 3 or 4 different names for this in libpcap CVS, but
+   * this seems to be what they have settled on...
+-@@ -162,6 +163,13 @@ static int setlogfile __P((char **));
++@@ -165,6 +166,13 @@ static int setlogfile __P((char **));
+  static int loadplugin __P((char **));
+  #endif
+  
+@@ -62,7 +62,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  #ifdef PPP_FILTER
+  static int setpassfilter __P((char **));
+  static int setactivefilter __P((char **));
+-@@ -326,6 +334,14 @@ option_t general_options[] = {
++@@ -344,6 +352,14 @@ option_t general_options[] = {
+        "set filter for active pkts", OPT_PRIO },
+  #endif
+  
+@@ -77,7 +77,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  #ifdef MAXOCTETS
+      { "maxoctets", o_int, &maxoctets,
+        "Set connection traffic limit",
+-@@ -1472,6 +1488,29 @@ callfile(argv)
++@@ -1488,6 +1504,29 @@ callfile(argv)
+      return ok;
+  }
+  
+diff --git a/package/network/services/ppp/patches/320-custom_iface_names.patch b/package/network/services/ppp/patches/320-custom_iface_names.patch
+index a95f4f8..56c7ae6 100644
+--- a/package/network/services/ppp/patches/320-custom_iface_names.patch
++++ b/package/network/services/ppp/patches/320-custom_iface_names.patch
+@@ -25,7 +25,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  	create_pidfile(getpid());	/* write pid to file */
+ --- a/pppd/options.c
+ +++ b/pppd/options.c
+-@@ -111,6 +111,7 @@ int	log_to_fd = 1;		/* send log messages
++@@ -112,6 +112,7 @@ int	log_to_fd = 1;		/* send log messages
+  bool	log_default = 1;	/* log_to_fd is default (stdout) */
+  int	maxfail = 10;		/* max # of unsuccessful connection attempts */
+  char	linkname[MAXPATHLEN];	/* logical name for link */
+@@ -33,7 +33,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  bool	tune_kernel;		/* may alter kernel settings */
+  int	connect_delay = 1000;	/* wait this many ms after connect script */
+  int	req_unit = -1;		/* requested interface unit */
+-@@ -266,6 +267,9 @@ option_t general_options[] = {
++@@ -277,6 +278,9 @@ option_t general_options[] = {
+      { "linkname", o_string, linkname,
+        "Set logical name for link",
+        OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, MAXPATHLEN },
+@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  /*
+   * Limits.
+   */
+-@@ -309,6 +313,7 @@ extern char	*record_file;	/* File to rec
++@@ -313,6 +317,7 @@ extern char	*record_file;	/* File to rec
+  extern bool	sync_serial;	/* Device is synchronous serial device */
+  extern int	maxfail;	/* Max # of unsuccessful connection attempts */
+  extern char	linkname[MAXPATHLEN]; /* logical name for link */
+diff --git a/package/network/services/ppp/patches/321-multilink_support_custom_iface_names.patch b/package/network/services/ppp/patches/321-multilink_support_custom_iface_names.patch
+index ed04886..1f9c6f3 100644
+--- a/package/network/services/ppp/patches/321-multilink_support_custom_iface_names.patch
++++ b/package/network/services/ppp/patches/321-multilink_support_custom_iface_names.patch
+@@ -118,7 +118,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
+  			&& memcmp(vd.dptr, key.dptr, vd.dsize) == 0;
+ --- a/pppd/sys-linux.c
+ +++ b/pppd/sys-linux.c
+-@@ -700,6 +700,16 @@ void cfg_bundle(int mrru, int mtru, int 
++@@ -700,6 +700,16 @@ void cfg_bundle(int mrru, int mtru, int
+  	add_fd(ppp_dev_fd);
+  }
+  
+diff --git a/package/network/services/ppp/patches/400-simplify_kernel_checks.patch b/package/network/services/ppp/patches/400-simplify_kernel_checks.patch
+index 4494aba..dd144f6 100644
+--- a/package/network/services/ppp/patches/400-simplify_kernel_checks.patch
++++ b/package/network/services/ppp/patches/400-simplify_kernel_checks.patch
+@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+  static char loop_name[20];
+  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
+-@@ -220,8 +220,8 @@ static int	looped;			/* 1 if using loop 
++@@ -220,8 +220,8 @@ static int	looped;			/* 1 if using loop
+  static int	link_mtu;		/* mtu for the link (not bundle) */
+  
+  static struct utsname utsname;	/* for the kernel version */
+@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+  	/* XXX should get from driver */
+  	driver_version = 2;
+-@@ -2197,6 +2203,7 @@ int ppp_available(void)
++@@ -2196,6 +2202,7 @@ int ppp_available(void)
+  
+      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
+  	ok = 0;
+@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  
+  /*
+   *  This is the PPP device. Validate the version of the driver at this
+-@@ -2690,6 +2697,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
++@@ -2691,6 +2698,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+      }
+  #endif /* TIOCGPTN */
+  
+@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+      if (sfd < 0) {
+  	/* the old way - scan through the pty name space */
+  	for (i = 0; i < 64; ++i) {
+-@@ -2708,6 +2716,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
++@@ -2709,6 +2717,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+  	    }
+  	}
+      }
+@@ -98,7 +98,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  	return 0;
+ --- a/pppd/plugins/pppoatm/pppoatm.c
+ +++ b/pppd/plugins/pppoatm/pppoatm.c
+-@@ -170,14 +170,6 @@ static void disconnect_pppoatm(void)
++@@ -168,14 +168,6 @@ static void disconnect_pppoatm(void)
+  
+  void plugin_init(void)
+  {
+@@ -115,7 +115,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  }
+ --- a/pppd/plugins/rp-pppoe/plugin.c
+ +++ b/pppd/plugins/rp-pppoe/plugin.c
+-@@ -60,9 +60,6 @@ static char const RCSID[] =
++@@ -59,9 +59,6 @@ static char const RCSID[] =
+  
+  char pppd_version[] = VERSION;
+  
+@@ -125,7 +125,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  char *pppd_pppoe_service = NULL;
+  static char *acName = NULL;
+  static char *existingSession = NULL;
+-@@ -340,10 +337,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
++@@ -371,10 +368,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+  void
+  plugin_init(void)
+  {
+diff --git a/package/network/services/ppp/patches/401-no_record_file.patch b/package/network/services/ppp/patches/401-no_record_file.patch
+index 94c0263..b2d1b6c 100644
+--- a/package/network/services/ppp/patches/401-no_record_file.patch
++++ b/package/network/services/ppp/patches/401-no_record_file.patch
+@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/pppd.h
+ +++ b/pppd/pppd.h
+-@@ -309,7 +309,6 @@ extern int	holdoff;	/* Dead time before 
++@@ -313,7 +313,6 @@ extern int	holdoff;	/* Dead time before
+  extern bool	holdoff_specified; /* true if user gave a holdoff value */
+  extern bool	notty;		/* Stdin/out is not a tty */
+  extern char	*pty_socket;	/* Socket to connect to pty */
+diff --git a/package/network/services/ppp/patches/403-no_wtmp.patch b/package/network/services/ppp/patches/403-no_wtmp.patch
+index e8e7625..3b84265 100644
+--- a/package/network/services/ppp/patches/403-no_wtmp.patch
++++ b/package/network/services/ppp/patches/403-no_wtmp.patch
+@@ -21,5 +21,5 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+  #endif
+ +#endif
+  }
+- 
++ #endif /* HAVE_LOGWTMP */
+  
+diff --git a/package/network/services/ppp/patches/405-no_multilink_option.patch b/package/network/services/ppp/patches/405-no_multilink_option.patch
+index 97a79c4..e8f99e5 100644
+--- a/package/network/services/ppp/patches/405-no_multilink_option.patch
++++ b/package/network/services/ppp/patches/405-no_multilink_option.patch
+@@ -9,7 +9,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+ 
+ --- a/pppd/options.c
+ +++ b/pppd/options.c
+-@@ -318,13 +318,14 @@ option_t general_options[] = {
++@@ -336,13 +336,14 @@ option_t general_options[] = {
+        "Enable multilink operation", OPT_PRIOSUB | OPT_ALIAS | 1 },
+      { "nomultilink", o_bool, &multilink,
+        "Disable multilink operation", OPT_PRIOSUB | 0 },
+diff --git a/package/network/services/ppp/patches/406-no_modprobe.patch b/package/network/services/ppp/patches/406-no_modprobe.patch
+deleted file mode 100644
+index 149d673..0000000
+--- a/package/network/services/ppp/patches/406-no_modprobe.patch
++++ /dev/null
+@@ -1,13 +0,0 @@
+-Index: ppp-2.4.5/pppd/plugins/pppoatm/pppoatm.c
+-===================================================================
+---- ppp-2.4.5.orig/pppd/plugins/pppoatm/pppoatm.c	2013-11-11 14:36:41.708298496 +0100
+-+++ ppp-2.4.5/pppd/plugins/pppoatm/pppoatm.c	2013-11-11 14:39:03.556301877 +0100
+-@@ -133,8 +133,6 @@
+- 	int fd;
+- 	struct atm_qos qos;
+- 
+--	system ("/sbin/modprobe -q pppoatm");
+--
+- 	if (!device_got_set)
+- 		no_device_given_pppoatm();
+- 	fd = socket(AF_ATMPVC, SOCK_DGRAM, 0);
+diff --git a/package/network/services/ppp/patches/430-pppol2tpv3-struct.patch b/package/network/services/ppp/patches/430-pppol2tpv3-struct.patch
+deleted file mode 100644
+index 204aa4e..0000000
+--- a/package/network/services/ppp/patches/430-pppol2tpv3-struct.patch
++++ /dev/null
+@@ -1,56 +0,0 @@
+-pppol2tp: Provide struct pppol2tpv3_addr to align with Linux
+-
+-The struct pppol2tpv3_addr is referenced in the current Linux kernel sources
+-but not provided by the shipped kernel headers, add it.
+-
+-Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+-
+---- a/include/linux/if_pppol2tp.h
+-+++ b/include/linux/if_pppol2tp.h
+-@@ -32,6 +32,46 @@ struct pppol2tp_addr
+- 	__u16 d_tunnel, d_session;	/* For sending outgoing packets */
+- };
+- 
+-+/* Structure used to connect() the socket to a particular tunnel UDP
+-+ * socket over IPv6.
+-+ */
+-+struct pppol2tpin6_addr
+-+{
+-+	pid_t	pid;		/* pid that owns the fd.
+-+					 * 0 => current */
+-+	int	fd;			/* FD of UDP socket to use */
+-+
+-+	__u16 s_tunnel, s_session;	/* For matching incoming packets */
+-+	__u16 d_tunnel, d_session;	/* For sending outgoing packets */
+-+
+-+	struct sockaddr_in6 addr;	/* IP address and port to send to */
+-+};
+-+
+-+/* The L2TPv3 protocol changes tunnel and session ids from 16 to 32
+-+ * bits. So we need a different sockaddr structure.
+-+ */
+-+struct pppol2tpv3_addr {
+-+	pid_t	pid;			/* pid that owns the fd.
+-+					 * 0 => current */
+-+	int	fd;			/* FD of UDP or IP socket to use */
+-+
+-+	struct sockaddr_in addr;	/* IP address and port to send to */
+-+
+-+	__u32 s_tunnel, s_session;	/* For matching incoming packets */
+-+	__u32 d_tunnel, d_session;	/* For sending outgoing packets */
+-+};
+-+
+-+struct pppol2tpv3in6_addr {
+-+	pid_t	pid;		/* pid that owns the fd.
+-+					 * 0 => current */
+-+	int	fd;			/* FD of UDP or IP socket to use */
+-+
+-+	__u32 s_tunnel, s_session;	/* For matching incoming packets */
+-+	__u32 d_tunnel, d_session;	/* For sending outgoing packets */
+-+
+-+	struct sockaddr_in6 addr;	/* IP address and port to send to */
+-+};
+-+
+- /* Socket options:
+-  * DEBUG	- bitmask of debug message categories
+-  * SENDSEQ	- 0 => don't send packets with sequence numbers
